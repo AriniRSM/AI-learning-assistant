@@ -17,8 +17,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Custom CSS ────────────────────────────────────────────────────────────────
-
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap');
@@ -61,7 +59,6 @@ background: #f8f9fc !important;
 .metric-card .value {
     font-size: 2rem;
     font-weight: 600;
-    color: #1a1f36;
     font-family: 'DM Serif Display', serif;
     color: #1a1f36 !important;
 }
@@ -90,7 +87,7 @@ background: #f8f9fc !important;
 .section-header {
     font-family: 'DM Serif Display', serif;
     font-size: 1.4rem;
-    color: #ffffff !important;
+    color: #1a1f36 !important;
     margin: 0 0 1rem;
     padding-bottom: 8px;
     border-bottom: 2px solid #e8ecf2;
@@ -103,7 +100,7 @@ background: #f8f9fc !important;
     border-radius: 10px;
     padding: 1rem 1.25rem;
     font-size: 0.875rem;
-    color: #1e40af !important;
+    color: #1a1f36 !important;
 }
 
 /* Plan display */
@@ -132,7 +129,8 @@ background: #f8f9fc !important;
 }
 
 .stTabs [data-baseweb="tab"] {
-    color: #ffffff !important;
+    color: #1a1f36 !important;
+    background: transparent !important;
 }
 
 /* Divider */
@@ -140,18 +138,12 @@ hr { border-color: #e8ecf2 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
-
+#follow chromaBD rules
 def sanitize_collection_name(name: str) -> str:
-    """
-    ChromaDB collection name rules:
-    - 3-512 chars, alphanumeric + underscores/hyphens/dots, no spaces.
-    """
     clean = re.sub(r"[^a-zA-Z0-9._-]", "_", name.strip())
     return f"course_{clean}" if len(clean) < 3 else clean
 
-
+#tracking status
 def status_badge(status: str) -> str:
     cls = {
         "Completed": "badge-completed",
@@ -162,15 +154,12 @@ def status_badge(status: str) -> str:
 
 
 def consistency_stats(history: dict) -> tuple[int, int, int]:
-    """Returns (completed, missed, partial) counts."""
     completed = sum(1 for s in history.values() if s == "Completed")
     missed    = sum(1 for s in history.values() if s == "Missed")
     partial   = sum(1 for s in history.values() if s == "Partial")
     return completed, missed, partial
 
-
-# ── Session state init ────────────────────────────────────────────────────────
-
+#loading data
 def init_session():
     data = load_data()
     if "plan" not in st.session_state:
@@ -188,22 +177,20 @@ def init_session():
 
 init_session()
 
-
-# ── Sidebar navigation ────────────────────────────────────────────────────────
-
+#sidebar
 with st.sidebar:
-    st.markdown("## 📚 AI Learning\nAssistant")
+    st.markdown("## AI Learning\nAssistant")
     st.markdown("---")
 
     page = st.radio(
         "Navigate",
-        ["🏠 Dashboard", "📅 Planner", "📈 Tracker", "📖 Course Tools"],
+        ["Dashboard", "Planner", "Tracker", "Course Tools"],
         label_visibility="collapsed",
     )
 
     st.markdown("---")
 
-    # Quick stats in sidebar
+#loading data in sidebar
     completed, missed, partial = consistency_stats(st.session_state.history)
     total = len(st.session_state.history)
     pct = round(completed / total * 100) if total else 0
@@ -218,9 +205,8 @@ with st.sidebar:
             st.caption(f"• {g}")
 
 
-# ── DASHBOARD ─────────────────────────────────────────────────────────────────
-
-if page == "🏠 Dashboard":
+#Dashboard
+if page == "Dashboard":
     st.markdown('<div class="section-header">Dashboard</div>', unsafe_allow_html=True)
 
     completed, missed, partial = consistency_stats(st.session_state.history)
@@ -280,9 +266,8 @@ if page == "🏠 Dashboard":
             )
 
 
-# ── PLANNER ───────────────────────────────────────────────────────────────────
-
-elif page == "📅 Planner":
+#Planner
+elif page == "Planner":
     st.markdown('<div class="section-header">Study Planner</div>', unsafe_allow_html=True)
 
     tab_gen, tab_view, tab_adapt = st.tabs(["Generate plan", "View current plan", "Adapt plan"])
@@ -291,7 +276,7 @@ elif page == "📅 Planner":
         st.markdown("**Your learning goals**")
         goals_input = st.text_area(
             "One goal per line",
-            placeholder="Learn Flutter in 12 weeks\nLearn AI/ML for job switch in 3 months",
+            placeholder="Enter your goals here",
             height=100,
             label_visibility="collapsed",
         )
@@ -377,9 +362,8 @@ elif page == "📅 Planner":
                         st.error(f"Adaptation failed: {e}")
 
 
-# ── TRACKER ───────────────────────────────────────────────────────────────────
-
-elif page == "📈 Tracker":
+#Track progress
+elif page == "Tracker":
     st.markdown('<div class="section-header">Daily Tracker</div>', unsafe_allow_html=True)
 
     tab_log, tab_topics = st.tabs(["Log progress", "Mark topics"])
@@ -390,14 +374,17 @@ elif page == "📈 Tracker":
             day = st.selectbox(
                 "Day",
                 ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+                key="selected_day"
             )
         with col_status:
-            status = st.selectbox("Status", ["Completed", "Partial", "Missed"])
+            status = st.selectbox("Status", ["Completed", "Partial", "Missed"],key="selected_status")
 
         if st.button("Save progress", type="primary", use_container_width=True):
-            updated = log_progress(day, status)
+            selected_day = st.session_state.selected_day
+            selected_status = st.session_state.selected_status
+            updated = log_progress(selected_day, selected_status)
             st.session_state.history = updated["history"]
-            st.success(f"{day} marked as **{status}**")
+            st.success(f"{selected_day} marked as **{selected_status}**")
             st.rerun()
 
         st.markdown("<br>**This week at a glance**", unsafe_allow_html=True)
@@ -434,9 +421,8 @@ elif page == "📈 Tracker":
                 st.markdown(f"✓ {t}")
 
 
-# ── COURSE TOOLS ──────────────────────────────────────────────────────────────
-
-elif page == "📖 Course Tools":
+#summarise notes
+elif page == "Course Tools":
     st.markdown('<div class="section-header">Course Tools</div>', unsafe_allow_html=True)
 
     tab_upload, tab_summary, tab_notes = st.tabs(["Upload course", "Summary", "Notes"])

@@ -1,10 +1,3 @@
-"""
-All LLM prompts live here.
-Keeping prompts out of business logic makes them easy to iterate on
-without touching agent/planner code.
-"""
-
-
 def build_planner_prompt(
     goals: list[str],
     learning_hours: float,
@@ -217,9 +210,7 @@ def build_notes_flashcards_prompt(context: str) -> str:
 
 For each topic write exactly in this format:
 
-🃏 FLASHCARD
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-**TOPIC:** [Topic Name]
+🃏**TOPIC:** [Topic Name]
 
 **SUMMARY:**
 [2-3 simple sentences explaining the topic in plain language a beginner understands]

@@ -24,7 +24,6 @@ def _get_client():
         _chroma_client = chromadb.PersistentClient(path=PERSIST_DIR)
     return _chroma_client
 
-
 def _get_embed_fn():
     global _embed_fn
     if _embed_fn is None:
@@ -48,17 +47,12 @@ def _get_query_embed_fn():
 
 
 def _sanitize(name: str) -> str:
-    """Convert display name to a valid ChromaDB collection name."""
     import re
     clean = re.sub(r"[^a-zA-Z0-9._-]", "_", name.strip())
     return f"course_{clean}" if len(clean) < 3 else clean
 
 
 def list_collections() -> list[dict]:
-    """
-    Return all indexed courses as list of dicts with display_name and collection_name.
-    e.g. [{"display_name": "Andrew Ng ML", "collection_name": "Andrew_Ng_ML"}]
-    """
     try:
         collections = _get_client().list_collections()
         result = []
@@ -71,7 +65,6 @@ def list_collections() -> list[dict]:
 
 
 def course_exists(display_name: str) -> bool:
-    """Check if a course with this display name is already indexed."""
     existing = list_collections()
     return any(
         c["display_name"].lower().strip() == display_name.lower().strip()
@@ -124,12 +117,6 @@ def _clean_chunks(chunks: list) -> list[dict]:
 
 
 def process_file(file_path: str, display_name: str) -> str:
-    """
-    Index a course file. display_name is what the user typed — stored in
-    collection metadata so dropdowns show human-readable names.
-    Returns a message string. Raises ValueError if already exists or no text found.
-    """
-    # Check duplicate by display name
     if course_exists(display_name):
         raise ValueError(
             f"'{display_name}' is already indexed. "

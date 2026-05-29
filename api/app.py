@@ -1,8 +1,3 @@
-"""
-FastAPI application — the public interface for the AI Learning Assistant.
-Run with: uvicorn api.app:app --reload
-"""
-
 import logging
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -68,7 +63,6 @@ def health():
 
 @app.post("/plan/generate")
 def create_plan(req: PlanRequest):
-    """Generate a fresh 7-day learning plan."""
     try:
         plan = generate_plan(
             goals=req.goals,
@@ -84,7 +78,6 @@ def create_plan(req: PlanRequest):
 
 @app.post("/plan/adapt")
 def adapt_current_plan():
-    """Adapt the current plan based on tracked progress."""
     try:
         adapted = adapt_plan()
         return {"adapted_plan": adapted}
@@ -97,7 +90,6 @@ def adapt_current_plan():
 
 @app.get("/plan/current")
 def get_current_plan():
-    """Fetch the stored plan and progress."""
     data = load_data()
     return {
         "plan": data.get("plan", ""),
@@ -109,7 +101,6 @@ def get_current_plan():
 
 @app.post("/progress/log")
 def log_daily_progress(req: ProgressRequest):
-    """Log completion status for a day."""
     valid_statuses = {"Completed", "Missed", "Partial"}
     if req.status not in valid_statuses:
         raise HTTPException(
@@ -122,7 +113,6 @@ def log_daily_progress(req: ProgressRequest):
 
 @app.post("/progress/topic-complete")
 def complete_topic(req: TopicRequest):
-    """Mark a topic as mastered."""
     mark_topic_complete(req.topic)
     return {"message": f"'{req.topic}' marked as mastered."}
 
@@ -132,7 +122,6 @@ async def upload_notes(
     notes_name: str,
     file: UploadFile = File(...),
 ):
-    """Upload a notes file (PDF/DOCX/XLSX) for RAG ingestion."""
     allowed_types = {
         "application/pdf",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -144,7 +133,6 @@ async def upload_notes(
             detail=f"Unsupported file type '{file.content_type}'. Upload PDF, DOCX, or XLSX."
         )
 
-    # Save to a temp file, process, then clean up
     suffix = os.path.splitext(file.filename)[1]
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         shutil.copyfileobj(file.file, tmp)
@@ -162,8 +150,6 @@ async def upload_notes(
 
 @app.get("/notes/{notes_name}/summary")
 def get_notes_summary(notes_name: str):
-    """Generate or retrieve a course summary."""
-    # Return cached summary if it exists
     data = load_data()
     if notes_name in data.get("notes", {}):
         return {"summary": data["notes"][notes_name], "cached": True}
@@ -178,7 +164,6 @@ def get_notes_summary(notes_name: str):
 
 @app.post("/notes/flashcards")
 def get_notes_flashcards(req: NotesRequest):
-    """Generate structured revision notes as flashcards for the notes or specific topic."""
     try:
         notes = generate_notes_flashcards(req.notes_name, req.topic)
         return {"notes": notes, "notes_name": req.notes_name, "topic": req.topic}

@@ -1,7 +1,3 @@
-"""
-Planner agent — generates and adapts the weekly learning plan.
-"""
-
 import logging
 from utils.llm import call_llm
 from agents.prompts import build_planner_prompt, build_adaptation_prompt
@@ -16,18 +12,6 @@ def generate_plan(
     working_hours: float,
     preferred_time: str | None = None,
 ) -> str:
-    """
-    Generate a fresh 7-day learning plan and persist it.
-
-    Args:
-        goals:          List of learning goals.
-        learning_hours: Daily hours available for learning.
-        working_hours:  Daily hours spent on corporate work.
-        preferred_time: Optional preferred learning time window (e.g. "9pm-11pm").
-
-    Returns:
-        The generated plan as a markdown string.
-    """
     logger.info(f"Generating plan for goals: {goals}")
 
     prompt = build_planner_prompt(goals, learning_hours, working_hours, preferred_time)
@@ -36,8 +20,8 @@ def generate_plan(
     data = load_data()
     data["plan"] = plan
     data["goals"] = goals
-    data["history"] = {}           # Reset history for new plan
-    data["completed_topics"] = []  # Reset mastery for new plan
+    data["history"] = {}
+    data["completed_topics"] = []
     save_data(data)
 
     logger.info("Plan generated and saved.")
@@ -45,13 +29,6 @@ def generate_plan(
 
 
 def adapt_plan() -> str:
-    """
-    Adapt the current plan based on tracked progress.
-    Reads goals, history, and mastered topics from storage automatically.
-
-    Returns:
-        The adapted plan as a markdown string.
-    """
     data = load_data()
 
     current_plan = data.get("plan", "")
@@ -70,9 +47,8 @@ def adapt_plan() -> str:
     prompt = build_adaptation_prompt(current_plan, progress_logs, goals, mastered)
     adapted_plan = call_llm(prompt)
 
-    # Save adapted plan as the new current plan
     data["plan"] = adapted_plan
-    data["history"] = {}  # Reset history for the new week
+    data["history"] = {}
     save_data(data)
 
     logger.info("Adapted plan saved.")
